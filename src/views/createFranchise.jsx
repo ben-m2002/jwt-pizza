@@ -12,6 +12,7 @@ export default function CreateFranchise() {
 
   async function createFranchise(event) {
     event.preventDefault();
+    console.log('franchise', franchise);
     await pizzaService.createFranchise(franchise);
     navigateToParentPath();
   }
