@@ -537,7 +537,7 @@ test("docs page", async({page}) => {
   await expect(page.getByText('🔐 [DELETE] /api/franchise/:franchiseId/store/:storeIdDelete a storeExample')).toBeVisible();
 });
 
-test("create store, close store",  async({page}) => {
+test("create store",  async({page}) => {
    await page.route('*/**/api/auth', async (route) => {
         // login
         const loginReq = {
@@ -578,3 +578,43 @@ test("create store, close store",  async({page}) => {
  await page.getByPlaceholder('store name').click();
  await page.getByPlaceholder('store name').fill('MyStore');
 })
+
+test("create store, close store",  async({page}) => {
+  await page.route('*/**/api/auth', async (route) => {
+    // login
+    const loginReq = {
+      "email": "a@jwt.com",
+      "password": "admin"
+    }
+    const loginRes = {
+      "user": {
+        "id": 1,
+        "name": "常用名字",
+        "email": "a@jwt.com",
+        "roles": [
+          {
+            "role": "admin"
+          }
+        ]
+      },
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IuW4uOeUqOWQjeWtlyIsImVtYWlsIjoiYUBqd3QuY29tIiwicm9sZXMiOlt7InJvbGUiOiJhZG1pbiJ9XSwiaWF0IjoxNzI3OTEwMjExfQ.wvzKRtEzlglLfrWkt8cI0Bn4JwyDFhOfkVEa6Fj8mD0"
+    }
+    expect(route.request().method()).toBe('PUT');
+    expect(route.request().postDataJSON()).toMatchObject(loginReq);
+    await route.fulfill({ json: loginRes });
+});
+  await page.goto('http://localhost:5173/');
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByPlaceholder('Email address').click();
+  await page.getByPlaceholder('Email address').fill('a@jwt.com');
+  await page.getByPlaceholder('Password').click();
+  await page.getByPlaceholder('Password').fill('admin');
+  await page.getByPlaceholder('Password').press('Enter');
+  await page.locator('#root').click();
+  await page.goto('http://localhost:5173/create-store');
+  await page.getByPlaceholder('store name').click();
+  await page.getByPlaceholder('store name').fill('This Store');
+  await page.getByRole('button', { name: 'Create' }).click();
+  await page.goto('http://localhost:5173/close-store');
+  await page.locator('#root').click();
+});
