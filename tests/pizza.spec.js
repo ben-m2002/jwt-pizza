@@ -602,7 +602,7 @@ test("create store, close store",  async({page}) => {
     expect(route.request().method()).toBe('PUT');
     expect(route.request().postDataJSON()).toMatchObject(loginReq);
     await route.fulfill({ json: loginRes });
-});
+  });
   await page.goto('http://localhost:5173/');
   await page.getByRole('link', { name: 'Login' }).click();
   await page.getByPlaceholder('Email address').click();
@@ -617,4 +617,163 @@ test("create store, close store",  async({page}) => {
   await page.getByRole('button', { name: 'Create' }).click();
   await page.goto('http://localhost:5173/close-store');
   await page.locator('#root').click();
+});
+
+test("franchise board",  async({page}) => {
+  await page.route('*/**/api/auth', async (route) => {
+    // login
+    const loginReq = {
+      "email": "a@jwt.com",
+      "password": "admin"
+    }
+    const loginRes = {
+      "user": {
+        "id": 1,
+        "name": "常用名字",
+        "email": "a@jwt.com",
+        "roles": [
+          {
+            "role": "admin"
+          }
+        ]
+      },
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IuW4uOeUqOWQjeWtlyIsImVtYWlsIjoiYUBqd3QuY29tIiwicm9sZXMiOlt7InJvbGUiOiJhZG1pbiJ9XSwiaWF0IjoxNzI3OTEwMjExfQ.wvzKRtEzlglLfrWkt8cI0Bn4JwyDFhOfkVEa6Fj8mD0"
+    }
+    expect(route.request().method()).toBe('PUT');
+    expect(route.request().postDataJSON()).toMatchObject(loginReq);
+    await route.fulfill({ json: loginRes });
+});
+
+  await page.route('*/**/api/franchise', async (route) => {
+    if (route.request().method() === 'GET') {
+      const request = route.request();
+      const headers = request.headers();
+      const authorizationHeader = headers['authorization'];
+      expect(authorizationHeader).toBeTruthy(); 
+      expect(authorizationHeader).toMatch(/^Bearer\s[\w-]+\.[\w-]+\.[\w-]+$/);
+      const franchiseRes =  [
+        {
+          "id": 6,
+          "name": "BensKitchen",
+          "admins": [
+            {
+              "id": 2,
+              "name": "franchisee",
+              "email": "franchisee@jwt.com"
+            }
+          ],
+          "stores": []
+        },
+        {
+          "id": 13,
+          "name": "ThisFranchise",
+          "admins": [
+            {
+              "id": 3,
+              "name": "BenjiBoo",
+              "email": "benji@jwt.com"
+            }
+          ],
+          "stores": []
+        },
+        {
+          "id": 23,
+          "name": "ThisFranchise2",
+          "admins": [
+            {
+              "id": 3,
+              "name": "BenjiBoo",
+              "email": "benji@jwt.com"
+            }
+          ],
+          "stores": []
+        }
+      ]
+      expect(route.request().method()).toBe('GET');
+      await route.fulfill({ json: franchiseRes });
+    }
+  });
+
+  await page.goto('http://localhost:5173/');
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByPlaceholder('Email address').click();
+  await page.getByPlaceholder('Email address').fill('a@jwt.com');
+  await page.getByPlaceholder('Password').click();
+  await page.getByPlaceholder('Password').fill('admin');
+  await page.getByPlaceholder('Password').press('Enter');
+  await page.getByRole('link', { name: 'Admin' }).click();
+  await expect(page.locator('#navbar-dark')).toContainText('OrderAdminLogout');
+  await expect(page.getByRole('heading')).toContainText('Mama Ricci\'s kitchen');
+  await expect(page.getByRole('main')).toContainText('Mama Ricci\'s kitchenKeep the dough rolling and the franchises signing up.FranchiseFranchiseeStoreRevenueActionBensKitchenfranchisee CloseThisFranchiseBenjiBoo CloseThisFranchise2BenjiBoo CloseAdd Franchise');
+  await expect(page.locator('thead')).toContainText('Franchise');
+  await expect(page.locator('thead')).toContainText('Franchisee');
+  await page.getByRole('columnheader', { name: 'Store' }).click();
+  await expect(page.locator('thead')).toContainText('Store');
+  await expect(page.locator('thead')).toContainText('Revenue');
+  await expect(page.locator('thead')).toContainText('Action');
+  await page.getByText('Mama Ricci\'s kitchen').click();
+  await page.getByText('Keep the dough rolling and').click();
+  await page.getByRole('row', { name: 'BensKitchen franchisee Close' }).getByRole('button').click();
+  await expect(page.getByRole('heading')).toContainText('Sorry to see you go');
+  await expect(page.getByRole('main')).toContainText('Are you sure you want to close the BensKitchen franchise? This will close all associated stores and cannot be restored. All outstanding revenue with not be refunded.');
+  await expect(page.getByRole('main')).toContainText('Cancel');
+  await expect(page.getByRole('main')).toContainText('Close');
+});
+
+
+test("diner dashboard valid/invalid",  async({page}) => {
+  await page.route('*/**/api/auth', async (route) => {
+    if (route.request().method() === 'PUT') {
+        // login
+        const loginReq = {
+          "email": "a@jwt.com",
+          "password": "admin"
+        }
+        const loginRes = {
+          "user": {
+            "id": 1,
+            "name": "常用名字",
+            "email": "a@jwt.com",
+            "roles": [
+              {
+                "role": "admin"
+              }
+            ]
+          },
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IuW4uOeUqOWQjeWtlyIsImVtYWlsIjoiYUBqd3QuY29tIiwicm9sZXMiOlt7InJvbGUiOiJhZG1pbiJ9XSwiaWF0IjoxNzI3OTEwMjExfQ.wvzKRtEzlglLfrWkt8cI0Bn4JwyDFhOfkVEa6Fj8mD0"
+        }
+        expect(route.request().method()).toBe('PUT');
+        expect(route.request().postDataJSON()).toMatchObject(loginReq);
+        await route.fulfill({ json: loginRes });
+      }
+      else {
+        // logout
+        const logoutRes = {
+          "message": "logout successful"
+        }
+        expect(route.request().method()).toBe('DELETE');
+        await route.fulfill({ json: logoutRes });
+      }
+  });
+  await page.goto('http://localhost:5173/');
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByPlaceholder('Email address').click();
+  await page.getByPlaceholder('Email address').fill('a@jwt.com');
+  await page.getByPlaceholder('Password').click();
+  await page.getByPlaceholder('Password').fill('admin');
+  await page.getByPlaceholder('Password').press('Enter');
+  await page.goto('http://localhost:5173/diner-dashboard');
+  await expect(page.getByRole('heading')).toContainText('Your pizza kitchen');
+  await expect(page.getByRole('main')).toContainText('name: 常用名字email: a@jwt.comrole: adminHow have you lived this long without having a pizza? Buy one now!');
+  await expect(page.getByRole('main')).toContainText('name:');
+  await expect(page.getByRole('main')).toContainText('email:');
+  await expect(page.getByRole('main')).toContainText('role:');
+  await expect(page.getByRole('main')).toContainText('常用名字');
+  await expect(page.getByRole('main')).toContainText('a@jwt.com');
+  await expect(page.getByRole('main')).toContainText('admin');
+  await expect(page.getByRole('main')).toContainText('How have you lived this long without having a pizza? Buy one now!');
+  await page.getByRole('link', { name: 'Logout' }).click();
+  await page.goto('http://localhost:5173/diner-dashboard');
+  await expect(page.getByRole('heading')).toContainText('Oops');
+  await expect(page.getByRole('main')).toContainText('It looks like we have dropped a pizza on the floor. Please try another page.');
 });
